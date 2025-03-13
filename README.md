@@ -43,9 +43,9 @@
 
 ## Configuration
 
-Update the `config.py` file with your Solr endpoint and API key:
+Update the env file with your Solr endpoint and API key:
 
-```python
+```g
 SOLR_ENDPOINT = "https://your-solr-endpoint"
 SOLR_API_KEY = "your-api-key"
 ```
