@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+python-dotenv = "*"
+elasticsearch = "*"
+kagglehub = "*"
+pandas = "*"
+pypdf2 = "*"
+huggingface-hub = "*"
+jsonschema = "*"
+json5 = "*"
+langchain = "*"
+langchain-community = "*"
+langchain-openai = "*"
+urllib3 = "*"
+pypandoc = "*"
+python-magic = "*"
+pycryptodome = "*"
+pysolr = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
+python_full_version = "3.12.3"
