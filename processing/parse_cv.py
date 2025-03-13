@@ -68,6 +68,7 @@ def create_extraction_prompt_cv(cv_text: str) -> ChatPromptTemplate:
             "work_experience_location_embedding": list[float] | null,
             "work_experience_description_embedding": list[float] | null,
             "total_work_experience": float | null,
+            "work_experience_seniority": "junior" | "mid" | "senior" | null,
             "skills": str | null,
             "skills_embedding": list[float] | null,
             "project_title": str | null,
@@ -117,6 +118,10 @@ def create_extraction_prompt_cv(cv_text: str) -> ChatPromptTemplate:
         - Calculate `total_work_experience` as the sum of all work experience durations in years (approximate if exact dates are missing).
         - For `skills`, concatenate all mentioned skills into a single string, separated by commas.
         - Use today’s date (2025-02-27) as a reference for "present" calculations if needed.
+        - Infer `work_experience_seniority` based on the total work experience in years:
+          - Less than 3 years: "junior"
+          - 3 to 6 years: "mid"
+          - More than 6 years: "senior"
         """
     )
 

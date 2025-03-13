@@ -31,23 +31,23 @@ def main():
     else:
         print(f"{profile_output_csv} already exists. Skipping processing.")
 
-    # csv_path = "data/extracted/cv.csv"
-    # batch_size = 1000  # You can adjust the batch size as needed
-    # process_cvs(csv_path, "data/parsed_data/cv", batch_size)
+    csv_path = "data/extracted/cv.csv"
+    batch_size = 1000  # You can adjust the batch size as needed
+    process_cvs(csv_path, "data/parsed_data/cv", batch_size)
 
-    # csv_path = "data/extracted/profile.csv"
-    # batch_size = 1000  # You can adjust the batch size as needed
-    # process_cvs(csv_path, "data/parsed_data/profile", batch_size)
+    csv_path = "data/extracted/profile.csv"
+    batch_size = 1000  # You can adjust the batch size as needed
+    process_cvs(csv_path, "data/parsed_data/profile", batch_size)
 
-    # # Calculate embeddings for CV documents
-    # input_directory = 'data/parsed_data/cv'
-    # output_directory = 'data/parsed_data_embeddings/cv'
-    # embed_json_files(input_directory, output_directory)
+    # Calculate embeddings for CV documents
+    input_directory = 'data/parsed_data/cv'
+    output_directory = 'data/parsed_data_embeddings/cv'
+    embed_json_files(input_directory, output_directory)
 
-    # # Calculate embeddings for Profile documents
-    # input_directory = 'data/parsed_data/profile'
-    # output_directory = 'data/parsed_data_embeddings/profile'
-    # embed_json_files(input_directory, output_directory)
+    # Calculate embeddings for Profile documents
+    input_directory = 'data/parsed_data/profile'
+    output_directory = 'data/parsed_data_embeddings/profile'
+    embed_json_files(input_directory, output_directory)
 
     client_cv = create_solr_client_cv()
     print(client_cv.ping())

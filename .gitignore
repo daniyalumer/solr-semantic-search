@@ -134,6 +134,8 @@ logs/
 data/extracted
 data/generated_query
 data/parsed_data
+data/parsed_data/cv
+data/parsed_data/profile
 data/parsed_data_embeddings
 data/resumepdf
 data/user_query
@@ -155,5 +157,7 @@ prompts.txt
 *.docx
 .pdf
 
-rozee_jd
+# Python virtual environments
+.venv/
+
 

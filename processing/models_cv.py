@@ -26,6 +26,12 @@ class ProjectType(str, Enum):
     OPEN_SOURCE = "open_source"
     VOLUNTEER = "volunteer"
 
+class Seniority(str, Enum):
+    JUNIOR = "junior"
+    MID = "mid"
+    SENIOR = "senior"
+
+
 class ResponseFormatter(BaseModel):
     contact_information_full_name: Optional[str]
     contact_information_phone_number: Optional[str]
@@ -45,6 +51,7 @@ class ResponseFormatter(BaseModel):
     work_experience_employment_type: Optional[EmploymentType]
     work_experience_locations: Optional[str]
     work_experience_descriptions: Optional[str]
+    work_experience_seniority: Optional[Seniority]
     skills: Optional[str]
     project_titles: Optional[str]
     project_project_types: Optional[str]
