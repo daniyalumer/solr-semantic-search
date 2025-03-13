@@ -28,14 +28,13 @@
     ```bash
     pipenv run python main.py
     ```
-
-3. Alternatively, you can run the `ingest.py` script to ingest data only:
+    OR
 
     ```bash
     pipenv run python ingest.py
     ```
 
-4. To query the ingested data, use the `query.py` script:
+3. To query the ingested data, use the `query.py` script:
 
     ```bash
     pipenv run python query.py
