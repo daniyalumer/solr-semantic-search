@@ -3,8 +3,8 @@
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/yourusername/rozee-gpt-semantic-solr.git
-    cd rozee-gpt-semantic-solr
+    git clone https://github.com/yourusername/solr-semantic-search.git
+    cd solr-semantic-search
     ```
 
 2. Install the required dependencies using `pipenv`:
