@@ -160,4 +160,6 @@ prompts.txt
 # Python virtual environments
 .venv/
 
+.DS_Store
+data/.DS_Store
 
