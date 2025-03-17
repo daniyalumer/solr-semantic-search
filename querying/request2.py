@@ -42,12 +42,13 @@ def load_job_embeddings(csv_file_path, row_index):
         # Collect job info for display
         job_info = {
             "job_title": df.iloc[pandas_index]['Job Title'],
+            "seniority": df.iloc[pandas_index]['Seniority'].lower() if not pd.isna(df.iloc[pandas_index]['Seniority']) else None
         }
         
         # Extract optional vectors if available
         if 'skills_vector' in df.columns:
             skills_vector = eval(df.iloc[pandas_index]['skills_vector'])
-            job_info["skills"] = df.iloc[pandas_index]['Skills']
+            job_info["skills"] = df.iloc[pandas_index]['Required Skills']
             
         if 'location_vector' in df.columns:
             location_vector = eval(df.iloc[pandas_index]['location_vector'])
@@ -55,7 +56,7 @@ def load_job_embeddings(csv_file_path, row_index):
             
         if 'desc_vector' in df.columns:
             desc_vector = eval(df.iloc[pandas_index]['desc_vector'])
-            desc = df.iloc[pandas_index]['Description']
+            desc = df.iloc[pandas_index]['Job Description']
             job_info["description"] = desc
         
         # Print information about the selected job
@@ -66,9 +67,10 @@ def load_job_embeddings(csv_file_path, row_index):
             print(f"Location: {job_info['location']}")
         if 'description' in job_info:
             # Print only first 150 chars of description to keep output manageable
-            print(f"Description: {job_info['description'][:150]}..." if len(job_info['description']) > 150 else f"Description: {job_info['description']}")
-
-        print("JOB INFOOOOO: ", job_info)
+            print(f"Description: {job_info['description']}")#[:150]}..." if len(job_info['description']) > 150 else f"Description: {job_info['description']}")
+        if 'seniority' in job_info:
+            print(f"Seniority: {job_info['seniority']}")
+        
             
         return job_title_vector, skills_vector, location_vector, desc_vector, job_info
     
@@ -79,7 +81,7 @@ def load_job_embeddings(csv_file_path, row_index):
 def build_search_query(job_title_vector, skills_vector=None, desc_vector=None, location_vector=None, job_info=None):
     """
     Build query parameters for searching with multiple vectors with different weights
-    and keyword search for location as a filter
+    and keyword search for location and seniority as filters
     """
     # Convert job title vector to string (this one is mandatory)
     job_title_vector_str = vector_to_str(job_title_vector)
@@ -89,46 +91,87 @@ def build_search_query(job_title_vector, skills_vector=None, desc_vector=None, l
         "defType": "edismax",
         "q": "*:*",
         "bq": [
-           f"{{!knn f=work_experience_job_titles_embedding topK=5 boost=4}}[{job_title_vector_str}]"
+           f"{{!knn f=work_experience_job_titles_embedding topK=50 boost=4}}[{job_title_vector_str}]"
         ],
-        "fl": "document_id, work_experience_job_titles, skills, contact_information_address, work_experience_descriptions, score",
-        "rows": 20
+        "fl": "document_id, work_experience_job_titles, skills, contact_information_address, work_experience_descriptions, work_experience_seniority, score",
+        "rows": 20,
+        "fq": ["score:[1.01 TO *]"],
     }
+    
+    # Initialize filter queries list
+    filter_queries = []
     
     # Add skills vector to query if available (weight 3)
     if skills_vector:
         skills_vector_str = vector_to_str(skills_vector)
         query_params["bq"].append(
-            f"{{!knn f=skills_embedding topK=5 boost=3}}[{skills_vector_str}]"
+            f"{{!knn f=skills_embedding topK=50 boost=3}}[{skills_vector_str}]"
         )
     
-    # Add location as a filter query if available in job_info (instead of boost query)
+    # Add location as a filter query if available in job_info
     if job_info and "location" in job_info:
         location = job_info["location"].strip()
-        print("LOCATION:", location)
         if location:
-            # Extract city from location if it contains multiple parts
-            city = location.split(',')[0].strip()
-            print("CITY:", city)
-            if city=="Multiple Cities":
-                city = location.split(',')[1].strip()
-                if location_vector:
-                    location_vector_str = vector_to_str(location_vector)
-                    query_params["bq"].append(
-                        f"{{!knn f=contact_information_address_embedding topK=5 boost=2}}[{location_vector_str}]"
-                    )
-            else:
-            # Add as filter query instead of boost query
-            # Using ~2 for fuzzy matching (allows up to 2 character differences)
-                #query_params["bq"].append(f"contact_information_address:\"{city}\"~2^1.6")
-                query_params["fq"] = f"contact_information_address:\"{city}\"~2"
+            # Split location by commas and clean up each part
+            location_parts = [part.strip() for part in location.split(',')]
+            
+            # The last part is typically the country
+            country = location_parts[-1] if location_parts else ""
+            
+            # City could be in multiple parts for complex locations
+            cities = []
+            # Extract cities - all parts except the country
+            if len(location_parts) > 1:
+                cities = location_parts[:-1]
+            elif len(location_parts) == 1:
+                # If only one part, assume it's a city
+                cities = [location_parts[0]]
+                
+            print(f"Extracted - Cities: {cities}, Country: {country}")
+            
+            # Build location filter queries
+            location_filters = []
+            
+            # # Add country filter if available
+            # if country and len(country.strip()) > 1:
+            #     location_filters.append(f"contact_information_address:*{country}*")
+            
+            # Add city filters - join with OR for multiple cities
+            if cities:
+                city_filters = []
+                for city in cities:
+                    if len(city.strip()) > 1:  # Avoid very short terms
+                        city_filters.append(f"contact_information_address:*{city}*")
+                
+                if city_filters:
+                    location_filters.append(f"({' OR '.join(city_filters)})")
+            
+            # Add location filters to main filter queries
+            if location_filters:
+                filter_queries.extend(location_filters)
 
-    # Add description vector to query if available (weight 1)
+    # Lets add a semantic query for location for testing purposes
+    # if location_vector:
+    #     location_vector_str = vector_to_str(location_vector)
+    #     query_params["bq"].append(
+    #         f"{{!knn f=contact_information_address_embedding topK=5 boost=15}}[{location_vector_str}]"
+    #     )
+    
+    # Add seniority as a filter query if available in job_info
+    if job_info and "seniority" in job_info and job_info["seniority"]:
+        seniority = job_info["seniority"].strip().lower()
+        filter_queries.append(f"work_experience_seniority:\"{seniority}\"")
+
+    # Add description vector to query if available (weight 2)
     if desc_vector:
         desc_vector_str = vector_to_str(desc_vector)
         query_params["bq"].append(
-            f"{{!knn f=work_experience_descriptions_embedding topK=5 boost=2}}[{desc_vector_str}]"
+            f"{{!knn f=work_experience_descriptions_embedding topK=30 boost=2}}[{desc_vector_str}]"
         )
+    
+    # Add all filter queries if any exist
+    if filter_queries:
+        query_params["fq"] = filter_queries
     
     return query_params
 
@@ -171,6 +214,10 @@ def display_results(result, collection_name):
             if 'work_experience_job_titles' in doc:
                 job_titles = ', '.join(doc['work_experience_job_titles'])
                 print(f"   Job Titles: {job_titles}")
+
+            if 'work_experience_seniority' in doc:
+                seniority = doc['work_experience_seniority']
+                print(f"   Seniority: {seniority}")
             
             if 'skills' in doc:
                 skills = ', '.join(doc['skills'])
@@ -182,7 +229,6 @@ def display_results(result, collection_name):
             
             if 'work_experience_descriptions' in doc:
                 summary = doc['work_experience_descriptions']
-                # Print only the first 100 characters of the summary to keep output manageable
                 print(f"  Work Experience Descriptions: {summary}")
 
             print("-" * 80)
@@ -203,7 +249,7 @@ if __name__ == "__main__":
         row_index = 2
     
     # Load vectors from CSV
-    csv_path = "data/rozee_jd/cleaned_jd.csv"
+    csv_path = "data/rozee_jd/rozee_jobs_with_embeddings.csv"
     job_title_vector, skills_vector, location_vector, desc_vector, job_info = load_job_embeddings(csv_path, row_index)
     
     if job_title_vector:
