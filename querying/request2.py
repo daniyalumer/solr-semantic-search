@@ -91,7 +91,7 @@ def build_search_query(job_title_vector, skills_vector=None, desc_vector=None, l
         "defType": "edismax",
         "q": "*:*",
         "bq": [
-           f"{{!knn f=work_experience_job_titles_embedding topK=50 boost=4}}[{job_title_vector_str}]"
+           f"{{!knn f=work_experience_job_titles_embedding topK=150 boost=4}}[{job_title_vector_str}]"
         ],
         "fl": "document_id, work_experience_job_titles, skills, contact_information_address, work_experience_descriptions, work_experience_seniority, score",
         "rows": 20,
@@ -105,10 +105,10 @@ def build_search_query(job_title_vector, skills_vector=None, desc_vector=None, l
     if skills_vector:
         skills_vector_str = vector_to_str(skills_vector)
         query_params["bq"].append(
-            f"{{!knn f=skills_embedding topK=50 boost=3}}[{skills_vector_str}]"
+            f"{{!knn f=skills_embedding topK=120 boost=3}}[{skills_vector_str}]"
         )
     
-    # Add location as a filter query if available in job_info
+# Add location as a filter query if available in job_info
     if job_info and "location" in job_info:
         location = job_info["location"].strip()
         if location:
@@ -132,12 +132,16 @@ def build_search_query(job_title_vector, skills_vector=None, desc_vector=None, l
             # Build location filter queries
             location_filters = []
             
-            # # Add country filter if available
-            # if country and len(country.strip()) > 1:
-            #     location_filters.append(f"contact_information_address:*{country}*")
+            # Handle special cases like "Multiple Cities, Pakistan"
+            # If city is "Multiple Cities" or similar generic terms, skip city filtering and use country instead
+            generic_city_terms = ["multiple cities", "various cities", "multiple locations", "various locations", "any"]
+            has_generic_city = any(city.lower() in generic_city_terms for city in cities)
             
-            # Add city filters - join with OR for multiple cities
-            if cities:
+            # Add country filter if we have a generic city term or if country is specified
+            if country and len(country.strip()) > 1 and (has_generic_city or not cities):
+                location_filters.append(f"contact_information_address:*{country}*")
+            # Otherwise, process city filters as usual (only if no generic terms found)
+            elif cities and not has_generic_city:
                 city_filters = []
                 for city in cities:
                     if len(city.strip()) > 1:  # Avoid very short terms
@@ -249,7 +253,7 @@ if __name__ == "__main__":
         row_index = 2
     
     # Load vectors from CSV
-    csv_path = "data/rozee_jd/rozee_jobs_with_embeddings.csv"
+    csv_path = "data/rozee_jd/rozee_jobs_with_embeddings2.csv"
     job_title_vector, skills_vector, location_vector, desc_vector, job_info = load_job_embeddings(csv_path, row_index)
     
     if job_title_vector:
