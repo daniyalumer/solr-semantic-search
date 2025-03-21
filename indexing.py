@@ -1,6 +1,5 @@
 import json
 import os
-from pysolr import Solr
 
 def index_documents(client, data_directory):
     for filename in os.listdir(data_directory):

@@ -108,7 +108,7 @@ def build_search_query(job_title_vector, skills_vector=None, desc_vector=None, l
             f"{{!knn f=skills_embedding topK=120 boost=3}}[{skills_vector_str}]"
         )
     
-# Add location as a filter query if available in job_info
+    # Add location as a filter query if available in job_info
     if job_info and "location" in job_info:
         location = job_info["location"].strip()
         if location:
@@ -155,11 +155,11 @@ def build_search_query(job_title_vector, skills_vector=None, desc_vector=None, l
                 filter_queries.extend(location_filters)
 
     # Lets add a semantic query for location for testing purposes
-    # if location_vector:
-    #     location_vector_str = vector_to_str(location_vector)
-    #     query_params["bq"].append(
-    #         f"{{!knn f=contact_information_address_embedding topK=5 boost=15}}[{location_vector_str}]"
-    #     )
+    if location_vector:
+        location_vector_str = vector_to_str(location_vector)
+        query_params["bq"].append(
+            f"{{!knn f=contact_information_address_embedding topK=5 boost=15}}[{location_vector_str}]"
+        )
     
     # Add seniority as a filter query if available in job_info
     if job_info and "seniority" in job_info and job_info["seniority"]:
@@ -195,7 +195,7 @@ def search_collection_by_vectors(collection_name, query_params):
     
     # Send the request
     response = requests.post(
-        f"https://ss251402-c5dglu8c-ap-south-1-aws.searchstax.com/solr/{collection_name}/select",
+        f"https://ss527146-sibn50hf-ap-southeast-1-aws.searchstax.com/solr/{collection_name}/select",
         data=query_params
     )
     
