@@ -25,10 +25,10 @@ logging.basicConfig(
 
 # Configure Selenium
 CHROME_DRIVER_PATH = "/Users/danya1/Desktop/chromedriver"
-BASE_URL = "https://www.rozee.pk/job/jsearch/q/"
+BASE_URL = "https://www.rozee.pk/top-jobs"
 OUTPUT_FILE = "/Users/danya1/Desktop/solr-semantic-search/data/extracted_jd/scrapedd.txt"
 CSV_FILE = "/Users/danya1/Desktop/solr-semantic-search/data/extracted_jd/rozee_jobs_llm.csv"
-EMBEDDINGS_FILE = "/Users/danya1/Desktop/solr-semantic-search/scraping/rozee_jobs_with_embeddings.csv"
+EMBEDDINGS_FILE = "/Users/danya1/Desktop/solr-semantic-search/data/extracted_jd/rozee_jobs_with_embeddings.csv"
 
 # Ensure output directory exists
 os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
@@ -85,35 +85,39 @@ def normalize_url(url):
         url += f"?{parsed.query}"
     return url
 
-def get_job_links(search_query):
-    """Fetch job listing links from Rozee.pk search results."""
-    search_url = BASE_URL + search_query.replace(" ", "%20")
-    logging.info(f"Searching URL: {search_url}")
+def get_job_links():
+    """Fetch job listing links from the Top Jobs section on Rozee.pk."""
+    logging.info(f"Searching URL: {BASE_URL}")
     try:
-        driver.get(search_url)
+        driver.get(BASE_URL)
         WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div.job"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.section.Tjbs.opages"))  # Wait for the Top Jobs section
         )
         scroll_page()
         soup = BeautifulSoup(driver.page_source, "html.parser")
         job_links = set()
-        job_cards = soup.select("div.job") or soup.select("div.job-listing")
+
+        # Select the Top Jobs section
+        top_jobs_section = soup.select_one("div.section.Tjbs.opages")
+        if not top_jobs_section:
+            logging.warning("No Top Jobs section found on the page.")
+            return []
+
+        # Extract job links from the Top Jobs section
+        job_cards = top_jobs_section.select("div.col-lg-4.col-md-6")
         for job_card in job_cards:
-            h3_elem = job_card.find("h3")
-            if h3_elem and h3_elem.find("a", href=True):
-                job_url = h3_elem.find("a", href=True)["href"]
-            else:
-                link_elem = job_card.find("a", href=True)
-                if not link_elem:
-                    continue
-                job_url = link_elem["href"]
+            link_elem = job_card.find("a", href=True, class_="full_link")
+            if not link_elem:
+                continue
+            job_url = link_elem["href"]
             full_url = normalize_url(job_url)
             if "job" in full_url.lower() and full_url.startswith("http"):
                 job_links.add(full_url)
-        logging.info(f"Found {len(job_links)} valid job links")
+
+        logging.info(f"Found {len(job_links)} valid job links in the Top Jobs section")
         return list(job_links)
     except Exception as e:
-        logging.error(f"Error fetching job links: {e}")
+        logging.error(f"Error fetching job links from Top Jobs: {e}")
         return []
 
 def get_job_details(job_url):
@@ -171,20 +175,8 @@ if __name__ == "__main__":
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             f.write("")
         logging.info(f"Cleared {OUTPUT_FILE} at start")
-        job_queries = [
-            "Software Engineer",
-            "Data Scientist",
-            "Project Manager",
-            "Electrical Engineer"
-        ]
-        all_job_links = []
-        for query in job_queries:
-            logging.info(f"Searching for '{query}' jobs")
-            job_links = get_job_links(query)
-            all_job_links.extend(job_links)
-            time.sleep(2)
-        all_job_links = list(set(all_job_links))
-        logging.info(f"Found {len(all_job_links)} unique job links across all queries")
+        all_job_links = get_job_links()
+        logging.info(f"Found {len(all_job_links)} unique job links in the Top Jobs section")
         for i, job_url in enumerate(all_job_links[:20]):
             logging.info(f"Processing job {i+1}/{min(20, len(all_job_links))}: {job_url}")
             details = get_job_details(job_url)

@@ -19,7 +19,7 @@ logging.basicConfig(
 # Initialize OpenAI client
 try:
     logging.info("Initializing OpenAI client")
-    client = OpenAI(api_key=" OPENAI_API_KEY ")
+    client = OpenAI(api_key="OPENAI_API_KEY")
 
 except Exception as e:
     logging.error(f"Failed to initialize OpenAI client: {e}", exc_info=True)
@@ -58,11 +58,11 @@ def determine_seniority(experience):
             years = float(''.join(c for c in exp_str if c.isdigit() or c == '.'))
         
         if years < 3:
-            return "Junior"
-        elif 3 <= years <= 5:
-            return "Mid"
+            return "junior"
+        elif 3 <= years <= 6:
+            return "mid"
         else:
-            return "Senior"
+            return "senior"
     except (ValueError, IndexError) as e:
         logging.warning(f"Could not parse experience: {experience}, error: {e}, defaulting to NULL")
         return "NULL"
@@ -94,12 +94,24 @@ def parse_text_with_llm(job_text):
     sanitized_job_text = job_text.replace("{", "{{").replace("}", "}}")
     prompt = """Extract the following information from the job posting text and return it as a valid JSON object. 
 Ensure the response is proper JSON format with all fields. If any field is missing, use "NULL":
+For Required Skills, carefully analyze both explicit requirements and implied skills from the job description.
+Include both technical and soft skills mentioned or implied in the text.
+
 - Job Title
 - Company Name
 - Location
 - Job Description
 - Required Skills
 - Experience (in years, e.g., "2 years", "5+ years", "2-3 years", or "NULL" if not specified)
+
+When analyzing Required Skills:
+1. Look for explicitly stated requirements
+2. Infer technical skills from job responsibilities
+3. Include relevant frameworks, tools, and technologies mentioned
+4. Consider soft skills implied by the role
+5. Extract skills from preferred qualifications
+
+
 
 Format your response as a valid JSON object:
 {

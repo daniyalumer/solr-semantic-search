@@ -21,7 +21,7 @@ start_time = time.time()
 
 embeddings_model = OpenAIEmbeddings(
     model="text-embedding-3-large", 
-    openai_api_key=" OPENAI_API_KEY ",
+    openai_api_key="OPENAI_API_KEY",
     dimensions=1024
 )
 
