@@ -1,6 +1,5 @@
 import os
 import shutil
-from pathlib import Path
 
 def separate_files(base_dir: str):
     cv_dir = os.path.join(base_dir, "CV")
